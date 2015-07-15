@@ -88,6 +88,32 @@ RendererES3::RendererES3()
         mVB[i] = 0;
 }
 
+void printOpenGLStats() {
+    GLint64 max_texture_size;
+    glGetInteger64v(GL_MAX_TEXTURE_BUFFER_SIZE_EXT, &max_texture_size);
+    long long int ll_max_texture_size = (long long int)max_texture_size;
+    ALOGV("Retrieved max texture size: %lld", ll_max_texture_size);
+
+    GLint64 max_compute_shared_memory;
+    //#define MAX_COMPUTE_SHARED_MEMORY_SIZE 0x8262
+    glGetInteger64v(GL_MAX_COMPUTE_SHARED_MEMORY_SIZE, &max_compute_shared_memory);
+    long long int ll_max_compute_shared_memory = (long long int)max_compute_shared_memory;
+    ALOGV("Retrieved max compute shared memory size: %lld", ll_max_compute_shared_memory);
+
+
+    GLint64 max_shader_storage_block_size;
+    //#define GL_MAX_SHADER_STORAGE_BLOCK_SIZE  0x90DE
+    glGetInteger64v(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &max_shader_storage_block_size);
+    long long int ll_max_shader_storage_block_size = (long long int)max_shader_storage_block_size;
+    ALOGV("Retrieved max_shader_storage_block_size: %lld", ll_max_shader_storage_block_size);
+
+    GLint64 max_compute_shader_storage_blocks;
+    //#define GL_MAX_SHADER_STORAGE_BLOCK_SIZE  0x90DE
+    glGetInteger64v(GL_MAX_COMPUTE_SHADER_STORAGE_BLOCKS, &max_compute_shader_storage_blocks);
+    long long int ll_max_compute_shader_storage_blocks = (long long int)max_compute_shader_storage_blocks;
+    ALOGV("Retrieved max_compute_shader_storage_blocks: %lld", ll_max_compute_shader_storage_blocks);
+}
+
 void tryComputeShader() {
     int i;
 
@@ -153,29 +179,7 @@ void tryComputeShader() {
     GLuint position_buffer = buffers[0];
     GLuint velocity_buffer = buffers[1];
 
-    GLint64 max_texture_size;
-    glGetInteger64v(GL_MAX_TEXTURE_BUFFER_SIZE_EXT, &max_texture_size);
-    long long int ll_max_texture_size = (long long int)max_texture_size;
-    ALOGV("Retrieved max texture size: %lld", ll_max_texture_size);
-
-    GLint64 max_compute_shared_memory;
-    //#define MAX_COMPUTE_SHARED_MEMORY_SIZE 0x8262
-    glGetInteger64v(GL_MAX_COMPUTE_SHARED_MEMORY_SIZE, &max_compute_shared_memory);
-    long long int ll_max_compute_shared_memory = (long long int)max_compute_shared_memory;
-    ALOGV("Retrieved max compute shared memory size: %lld", ll_max_compute_shared_memory);
-
-
-    GLint64 max_shader_storage_block_size;
-    //#define GL_MAX_SHADER_STORAGE_BLOCK_SIZE  0x90DE
-    glGetInteger64v(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &max_shader_storage_block_size);
-    long long int ll_max_shader_storage_block_size = (long long int)max_shader_storage_block_size;
-    ALOGV("Retrieved max_shader_storage_block_size: %lld", ll_max_shader_storage_block_size);
-
-    GLint64 max_compute_shader_storage_blocks;
-    //#define GL_MAX_SHADER_STORAGE_BLOCK_SIZE  0x90DE
-    glGetInteger64v(GL_MAX_COMPUTE_SHADER_STORAGE_BLOCKS, &max_compute_shader_storage_blocks);
-    long long int ll_max_compute_shader_storage_blocks = (long long int)max_compute_shader_storage_blocks;
-    ALOGV("Retrieved max_compute_shader_storage_blocks: %lld", ll_max_compute_shader_storage_blocks);
+    printOpenGLStats();
 
     glBindBuffer(GL_TEXTURE_BUFFER_EXT, velocity_buffer);
     err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to bind velocity buffer: %d\n", err); }
