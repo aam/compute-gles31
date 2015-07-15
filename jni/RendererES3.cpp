@@ -18,6 +18,7 @@
 #include <EGL/egl.h>
 
 #include <stdlib.h>
+#include <stdio.h>
 
 #define STR(s) #s
 #define STRV(s) STR(s)
@@ -122,13 +123,15 @@ void tryComputeShader() {
     GLenum err = glGetError();
     if (err != GL_NO_ERROR) { ALOGE("Failed to create program: %d\n", err); }
 
-    static const char compute_shader_source[] =
+    const int workgroupSize = 128;
+
+    static const char compute_shader_header[] =
 "#version 310 es\n"
-"#define LOCAL_SIZE 128\n"
-"\n"
+"#define LOCAL_SIZE ";
+    static const char compute_shader_body[] =
 "#extension GL_ANDROID_extension_pack_es31a : require\n"
 "\n"
-"layout(local_size_x = LOCAL_SIZE, local_size_y = LOCAL_SIZE) in;\n"
+"layout(local_size_x = LOCAL_SIZE) in;\n"
 "layout(binding=0, rgba32f) uniform mediump readonly imageBuffer velocity_buffer;\n"
 "layout(binding=1, rgba32f) uniform mediump writeonly imageBuffer position_buffer;\n"
 "\n"
@@ -139,11 +142,18 @@ void tryComputeShader() {
 "    imageStore(position_buffer, int(gl_GlobalInvocationID.x), vel);\n"
 "}\n";
 
+    const int compute_shader_source_max_len = strlen(compute_shader_header) + 32 + strlen(compute_shader_body);
+    char compute_shader_source[compute_shader_source_max_len];
+    snprintf(compute_shader_source, compute_shader_source_max_len,
+        R"(%s%d
+           %s)", compute_shader_header, workgroupSize, compute_shader_body);
+
+
     GLuint shader = glCreateShader(GL_COMPUTE_SHADER);
     err = glGetError();
     if (err != GL_NO_ERROR) { ALOGE("Failed to create shader: %d\n", err); }
     const GLchar* sources = { compute_shader_source };
-    const GLint lengths = { strlen(compute_shader_source) };
+    const GLint lengths = { (GLint)strlen(compute_shader_source) };
     glShaderSource(shader, 1, &sources, &lengths);
     err = glGetError();
     if (err != GL_NO_ERROR) { ALOGE("Failed to shader source: %d\n", err); }
@@ -238,7 +248,6 @@ void tryComputeShader() {
     glBindImageTexture(1, position_tbo, 0, false, 0, GL_WRITE_ONLY, GL_RGBA32F);
     err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to bind position image texture: %x\n", err); }
 
-    const int workgroupSize = 8;
     glDispatchCompute(POINTS / workgroupSize, 1, 1);
     err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to dispatch compute: %x\n", err); }
 
