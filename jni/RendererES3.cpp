@@ -289,15 +289,6 @@ bool RendererES3::init() {
     if (!mProgram)
         return false;
 
-    // GLuint buffers[2];
-    // glGenBuffers(2, buffers);
-    // GLuint position_buffer = buffers[0];
-    // GLuint velocity_buffer = buffers[1];
-
-    // glBindBuffer(GL_TEXTURE_BUFFER_EXT, velocity_buffer);
-    // GLenum err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to bind velocity buffer: %d\n", err); }
-    // ALOGV("Bound velocity buffer");
-
     tryComputeShader();
 
     glGenBuffers(VB_COUNT, mVB);
