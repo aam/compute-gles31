@@ -126,21 +126,22 @@ void tryComputeShader() {
     const int workgroupSize = 128;
 
     static const char compute_shader_header[] =
-"#version 310 es\n"
-"#define LOCAL_SIZE ";
+R"(#version 310 es
+#define LOCAL_SIZE )";
     static const char compute_shader_body[] =
-"#extension GL_ANDROID_extension_pack_es31a : require\n"
-"\n"
-"layout(local_size_x = LOCAL_SIZE) in;\n"
-"layout(binding=0, rgba32f) uniform mediump readonly imageBuffer velocity_buffer;\n"
-"layout(binding=1, rgba32f) uniform mediump writeonly imageBuffer position_buffer;\n"
-"\n"
-"void main()\n"
-"{\n"
-"    vec4 vel = imageLoad(velocity_buffer, int(gl_GlobalInvocationID.x));\n"
-"    vel += vec4(100.0f, 50.0f, 25.0f, 12.5f);\n"
-"    imageStore(position_buffer, int(gl_GlobalInvocationID.x), vel);\n"
-"}\n";
+R"(#extension GL_ANDROID_extension_pack_es31a : require
+
+layout(local_size_x = LOCAL_SIZE) in;
+layout(binding=0, rgba32f) uniform mediump readonly imageBuffer velocity_buffer;
+layout(binding=1, rgba32f) uniform mediump writeonly imageBuffer position_buffer;
+
+void main()
+{
+    vec4 vel = imageLoad(velocity_buffer, int(gl_GlobalInvocationID.x));
+    vel += vec4(100.0f, 50.0f, 25.0f, 12.5f);
+    imageStore(position_buffer, int(gl_GlobalInvocationID.x), vel);
+}
+)";
 
     const int compute_shader_source_max_len = strlen(compute_shader_header) + 32 + strlen(compute_shader_body);
     char compute_shader_source[compute_shader_source_max_len];
