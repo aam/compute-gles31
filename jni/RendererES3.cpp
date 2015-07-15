@@ -180,14 +180,6 @@ void tryComputeShader() {
     glBindBuffer(GL_TEXTURE_BUFFER_EXT, velocity_buffer);
     err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to bind velocity buffer: %d\n", err); }
     ALOGV("Bound velocity buffer");
-    // float velocities[POINTS * 4];
-    // for (i = 0; i < POINTS; i++) {
-    //     velocities[i * 4 + 0] = i * 4;
-    //     velocities[i * 4 + 1] = i * 4 + 1;
-    //     velocities[i * 4 + 2] = i * 4 + 2;
-    //     velocities[i * 4 + 3] = i * 4 + 3;
-    // }
-    // glBufferData(GL_TEXTURE_BUFFER_EXT, sizeInBytes, velocities, GL_DYNAMIC_COPY);
     glBufferData(GL_TEXTURE_BUFFER_EXT, sizeInBytes, NULL, GL_DYNAMIC_COPY);
     err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to buffer velocity data: %x\n", err); }
 
@@ -204,13 +196,6 @@ void tryComputeShader() {
         velocities[i * 4 + 2] = -i * 4 + 2;
         velocities[i * 4 + 3] = i * 4 + 3;
     }
-    // for (i = 0; i < POINTS; i++) {
-    //     ALOGV("positions[%d]=(%f, %f, %f, %f)\n", i,
-    //         positions[i * 4 + 0],
-    //         positions[i * 4 + 1],
-    //         positions[i * 4 + 2],
-    //         positions[i * 4 + 3]);
-    // }
     glUnmapBuffer(GL_TEXTURE_BUFFER_EXT);
     err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to unmap velocities buffer: %x\n", err); }
     ALOGV("Unmapped velocities buffer");
@@ -220,57 +205,6 @@ void tryComputeShader() {
     ALOGV("Bound position buffer");
     glBufferData(GL_TEXTURE_BUFFER_EXT, sizeInBytes, NULL, GL_DYNAMIC_COPY);
 
-    // glBindBuffer(GL_ARRAY_BUFFER, position_buffer);
-    // err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to bind buffer: %d\n", err); }
-    // glBufferData(GL_ARRAY_BUFFER, sizeInBytes, NULL, GL_DYNAMIC_COPY);
-    // err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to buffer data: %d\n", err); }
-
-
-    // dt_location = glGetUniformLocation(compute_prog, "dt");
-
-    // glGenVertexArrays(1, &render_vao);
-    // glBindVertexArray(render_vao);
-
-    // glGenBuffers(2, buffers);
-    // glBindBuffer(GL_ARRAY_BUFFER, position_buffer);
-    // glBufferData(GL_ARRAY_BUFFER, PARTICLE_COUNT * sizeof(vmath::vec4), NULL, GL_DYNAMIC_COPY);
-
-    // vmath::vec4 * positions = (vmath::vec4 *)glMapBufferRange(GL_ARRAY_BUFFER,
-    //                                                           0,
-    //                                                           PARTICLE_COUNT * sizeof(vmath::vec4),
-    //                                                           GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
-
-    // for (i = 0; i < PARTICLE_COUNT; i++)
-    // {
-    //     positions[i] = vmath::vec4(random_vector(-10.0f, 10.0f), random_float());
-    // }
-
-    // glUnmapBuffer(GL_ARRAY_BUFFER);
-
-    // glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, NULL);
-    // glEnableVertexAttribArray(0);
-    // glBindBuffer(GL_ARRAY_BUFFER, velocity_buffer);
-    // glBufferData(GL_ARRAY_BUFFER, PARTICLE_COUNT * sizeof(vmath::vec4), NULL, GL_DYNAMIC_COPY);
-
-    // vmath::vec4 * velocities = (vmath::vec4 *)glMapBufferRange(GL_ARRAY_BUFFER,
-    //                                                            0,
-    //                                                            PARTICLE_COUNT * sizeof(vmath::vec4),
-    //                                                            GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
-
-    // for (i = 0; i < PARTICLE_COUNT; i++)
-    // {
-    //     velocities[i] = vmath::vec4(random_vector(-0.1f, 0.1f), 0.0f);
-    // }
-
-    // glUnmapBuffer(GL_ARRAY_BUFFER);
-
-    // for (i = 0; i < 2; i++)
-    // {
-    //     glBindTexture(GL_TEXTURE_2D, tbos[i]);
-    //     err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to bind texture %d: %x\n", tbos[i], err); }
-    //     glTexBufferEXT(GL_TEXTURE_BUFFER_EXT, GL_RGBA32F, buffers[i]);
-    //     err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to tex buffer: %x\n", err); }
-    // }
     GLuint tbos[2];
     glGenTextures(2, tbos);
     err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to gen textures: %d\n", err); }
@@ -290,6 +224,7 @@ void tryComputeShader() {
 
     // === End of initialization and setup ===
 
+    // === Run the compute shader and retrieve the results ===
 
     glUseProgram(compute_prog);
     err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to use program: %x\n", err); }
@@ -328,54 +263,6 @@ void tryComputeShader() {
     glUnmapBuffer(GL_TEXTURE_BUFFER_EXT);
     err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to unmap buffer: %x\n", err); }
     ALOGV("Unmapped positions buffer");
-
-
-
-    // glGenBuffers(1, &attractor_buffer);
-    // glBindBuffer(GL_UNIFORM_BUFFER, attractor_buffer);
-    // glBufferData(GL_UNIFORM_BUFFER, 32 * sizeof(vmath::vec4), NULL, GL_STATIC_DRAW);
-
-    // for (i = 0; i < MAX_ATTRACTORS; i++)
-    // {
-    //     attractor_masses[i] = 0.5f + random_float() * 0.5f;
-    // }
-
-    // glBindBufferBase(GL_UNIFORM_BUFFER, 0, attractor_buffer);
-
-    // // Now create a simple program to visualize the result
-    // render_prog = glCreateProgram();
-
-    // static const char render_vs[] =
-    //     "#version 430 core\n"
-    //     "\n"
-    //     "in vec4 vert;\n"
-    //     "\n"
-    //     "uniform mat4 mvp;\n"
-    //     "\n"
-    //     "out float intensity;\n"
-    //     "\n"
-    //     "void main(void)\n"
-    //     "{\n"
-    //     "    intensity = vert.w;\n"
-    //     "    gl_Position = mvp * vec4(vert.xyz, 1.0);\n"
-    //     "}\n";
-
-    // static const char render_fs[] =
-    //     "#version 430 core\n"
-    //     "\n"
-    //     "layout (location = 0) out vec4 color;\n"
-    //     "\n"
-    //     "in float intensity;\n"
-    //     "\n"
-    //     "void main(void)\n"
-    //     "{\n"
-    //     "    color = mix(vec4(0.0f, 0.2f, 1.0f, 1.0f), vec4(0.2f, 0.05f, 0.0f, 1.0f), intensity);\n"
-    //     "}\n";
-
-    // vglAttachShaderSource(render_prog, GL_VERTEX_SHADER, render_vs);
-    // vglAttachShaderSource(render_prog, GL_FRAGMENT_SHADER, render_fs);
-
-    // glLinkProgram(render_prog);
     ALOGV("All done with tryComputeShader");
 
     return;
