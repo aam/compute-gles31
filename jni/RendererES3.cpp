@@ -115,13 +115,21 @@ void printOpenGLStats() {
     ALOGV("Retrieved max_compute_shader_storage_blocks: %lld", ll_max_compute_shader_storage_blocks);
 }
 
+void assertNoGLErrors(const char *step) {
+    GLenum err = glGetError();
+    if (err != GL_NO_ERROR) {
+        ALOGE("Failed to %s: %d", step, err);
+    } else {
+        ALOGV("Completed %s", step);
+    }
+}
+
 void tryComputeShader() {
     int i;
 
    // Initialize our compute program
     GLuint compute_prog = glCreateProgram();
-    GLenum err = glGetError();
-    if (err != GL_NO_ERROR) { ALOGE("Failed to create program: %d\n", err); }
+    assertNoGLErrors("create program");
 
     const int workgroupSize = 128;
 
@@ -151,16 +159,13 @@ void main()
 
 
     GLuint shader = glCreateShader(GL_COMPUTE_SHADER);
-    err = glGetError();
-    if (err != GL_NO_ERROR) { ALOGE("Failed to create shader: %d\n", err); }
+    assertNoGLErrors("create shader");
     const GLchar* sources = { compute_shader_source };
     const GLint lengths = { (GLint)strlen(compute_shader_source) };
     glShaderSource(shader, 1, &sources, &lengths);
-    err = glGetError();
-    if (err != GL_NO_ERROR) { ALOGE("Failed to shader source: %d\n", err); }
+    assertNoGLErrors("shader source");
     glCompileShader(shader);
-    err = glGetError();
-    if (err != GL_NO_ERROR) { ALOGE("Failed to compile shader: %d\n", err); }
+    assertNoGLErrors("compile shader");
 
     GLint shader_ok = 0;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &shader_ok);
@@ -176,11 +181,9 @@ void main()
     }
 
     glAttachShader(compute_prog, shader);
-    err = glGetError();
-    if (err != GL_NO_ERROR) { ALOGE("Failed to attach shader: %d\n", err); }
+    assertNoGLErrors("attach shader");
     glLinkProgram(compute_prog);
-    err = glGetError();
-    if (err != GL_NO_ERROR) { ALOGE("Failed to link program: %d\n", err); }
+    assertNoGLErrors("link shader");
 
     ALOGV("Program linked");
     const int POINTS = 512*1024-1;
@@ -193,10 +196,9 @@ void main()
     printOpenGLStats();
 
     glBindBuffer(GL_TEXTURE_BUFFER_EXT, velocity_buffer);
-    err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to bind velocity buffer: %d\n", err); }
-    ALOGV("Bound velocity buffer");
+    assertNoGLErrors("bind velocity buffer");
     glBufferData(GL_TEXTURE_BUFFER_EXT, sizeInBytes, NULL, GL_DYNAMIC_COPY);
-    err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to buffer velocity data: %x\n", err); }
+    assertNoGLErrors("buffer velocity data");
 
     long unsigned int luiSizeInBytes = (long unsigned int)sizeInBytes;
     ALOGV("Going to glMapBufferRange for %lu bytes", luiSizeInBytes);
@@ -204,7 +206,7 @@ void main()
                                                 0,
                                                 sizeInBytes,
                                                 GL_MAP_WRITE_BIT);
-    err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to map velocities buffer range: %x\n", err); }
+    assertNoGLErrors("map velocity buffer range");
     for (i = 0; i < POINTS; i++) {
         velocities[i * 4 + 0] = -i * 4;
         velocities[i * 4 + 1] = i * 4 + 1;
@@ -212,58 +214,53 @@ void main()
         velocities[i * 4 + 3] = i * 4 + 3;
     }
     glUnmapBuffer(GL_TEXTURE_BUFFER_EXT);
-    err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to unmap velocities buffer: %x\n", err); }
-    ALOGV("Unmapped velocities buffer");
-
+    assertNoGLErrors("unmap velocity buffer");
 
     glBindBuffer(GL_TEXTURE_BUFFER_EXT, position_buffer);
-    ALOGV("Bound position buffer");
+    assertNoGLErrors("bind position buffer");
     glBufferData(GL_TEXTURE_BUFFER_EXT, sizeInBytes, NULL, GL_DYNAMIC_COPY);
+    assertNoGLErrors("buffer position data");
 
     GLuint tbos[2];
     glGenTextures(2, tbos);
-    err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to gen textures: %d\n", err); }
+    assertNoGLErrors("gen textures");
 
     int velocity_tbo = tbos[0];
     glBindTexture(GL_TEXTURE_BUFFER_EXT, velocity_tbo);
-    err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to bind velocity texture %d to binding point %x: %x\n", velocity_tbo, GL_TEXTURE_BUFFER_EXT, err); }
+    assertNoGLErrors("bind velocity texture");
     glTexBufferEXT(GL_TEXTURE_BUFFER_EXT, GL_RGBA32F, velocity_buffer);
-    err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to tex velocity buffer: %x\n", err); }
+    assertNoGLErrors("tex velocity buffer");
 
     int position_tbo = tbos[1];
     glBindTexture(GL_TEXTURE_BUFFER_EXT, position_tbo);
-    err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to bind position texture %d to binding point %x: %x\n", position_tbo, GL_TEXTURE_BUFFER_EXT, err); }
+    assertNoGLErrors("bind position texture");
     glTexBufferEXT(GL_TEXTURE_BUFFER_EXT, GL_RGBA32F, position_buffer);
-    err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to tex velocity buffer: %x\n", err); }
-
+    assertNoGLErrors("tex position buffer");
 
     // === End of initialization and setup ===
 
     // === Run the compute shader and retrieve the results ===
 
     glUseProgram(compute_prog);
-    err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to use program: %x\n", err); }
+    assertNoGLErrors("use program");
 
     glBindImageTexture(0, velocity_tbo, 0, false, 0, GL_READ_ONLY, GL_RGBA32F);
-    err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to bind velocity image texture: %x\n", err); }
+    assertNoGLErrors("bind image texture for velocity tbo");
     glBindImageTexture(1, position_tbo, 0, false, 0, GL_WRITE_ONLY, GL_RGBA32F);
-    err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to bind position image texture: %x\n", err); }
+    assertNoGLErrors("bind image texture for position tbo");
 
     glDispatchCompute(POINTS / workgroupSize, 1, 1);
-    err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to dispatch compute: %x\n", err); }
+    assertNoGLErrors("dispatch compute");
 
     glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
-    err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to memory barrier: %x\n", err); }
+    assertNoGLErrors("memory barrier");
     ALOGV("Program completed");
 
-    err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to buffer position data: %x\n", err); }
-    err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to bind positions buffer: %d\n", err); }
-    ALOGV("Going to glMapBufferRange");
     float *positions = (float*)glMapBufferRange(GL_TEXTURE_BUFFER_EXT,
                                                 0,
                                                 sizeInBytes,
                                                 GL_MAP_READ_BIT);
-    err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to map buffer range: %x\n", err); }
+    assertNoGLErrors("map positions buffer");
     for (i = 0; i < POINTS; i++) {
         ALOGV("positions[%d]=(%f, %f, %f, %f)\n", i,
             positions[i * 4 + 0],
@@ -275,10 +272,9 @@ void main()
         }
     }
     glUnmapBuffer(GL_TEXTURE_BUFFER_EXT);
-    err = glGetError(); if (err != GL_NO_ERROR) { ALOGE("Failed to unmap buffer: %x\n", err); }
-    ALOGV("Unmapped positions buffer");
-    ALOGV("All done with tryComputeShader");
+    assertNoGLErrors("unmap positions buffer");
 
+    ALOGV("All done with tryComputeShader");
     return;
 }
 
