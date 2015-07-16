@@ -161,8 +161,7 @@ void main()
     GLuint shader = glCreateShader(GL_COMPUTE_SHADER);
     assertNoGLErrors("create shader");
     const GLchar* sources = { compute_shader_source };
-    const GLint lengths = { (GLint)strlen(compute_shader_source) };
-    glShaderSource(shader, 1, &sources, &lengths);
+    glShaderSource(shader, 1, &sources, NULL);
     assertNoGLErrors("shader source");
     glCompileShader(shader);
     assertNoGLErrors("compile shader");
