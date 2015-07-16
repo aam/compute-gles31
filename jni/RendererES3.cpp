@@ -146,8 +146,9 @@ layout(binding=1, rgba32f) uniform mediump writeonly imageBuffer position_buffer
 void main()
 {
     vec4 vel = imageLoad(velocity_buffer, int(gl_GlobalInvocationID.x));
-    vel = vec4(gl_LocalInvocationID.x, gl_WorkGroupID.x, 25.0f, 12.5f);
-    imageStore(position_buffer, int(gl_GlobalInvocationID.x), vel);
+    vel += vec4(0.0f, 0.0f, 25.0f, 12.5f);
+    vec4 result = vec4(gl_LocalInvocationID.x, gl_WorkGroupID.x, vel.z, vel.w);
+    imageStore(position_buffer, int(gl_GlobalInvocationID.x), result);
 }
 )";
 
@@ -185,8 +186,8 @@ void main()
     assertNoGLErrors("link shader");
 
     ALOGV("Program linked");
-    const int POINTS = 8*1024*1024-1; // N6: max allowed with max workgroupSize
-    const size_t sizeInBytes = POINTS * 4 * sizeof(float); // N6: 134,217,712 out of 134,217,728 max texture size
+    const int POINTS = 63*1024;  // N6: max number of points that can be actually retrieved using MapBufferRange
+    const size_t sizeInBytes = POINTS * 4 * sizeof(float); // N6: only 1MB out of 134,217,728 max texture size works with MapBufferRange
     GLuint buffers[2];
     glGenBuffers(2, buffers);
     GLuint position_buffer = buffers[0];
@@ -253,6 +254,8 @@ void main()
 
     glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
     assertNoGLErrors("memory barrier");
+    glFinish();
+    assertNoGLErrors("finish");
     ALOGV("Program completed");
 
     float *positions = (float*)glMapBufferRange(GL_TEXTURE_BUFFER_EXT,
@@ -260,15 +263,18 @@ void main()
                                                 sizeInBytes,
                                                 GL_MAP_READ_BIT);
     assertNoGLErrors("map positions buffer");
-    for (i = 0; i < POINTS; i++) {
-        ALOGV("positions[%d]=(%f, %f, %f, %f)\n", i,
-            positions[i * 4 + 0],
-            positions[i * 4 + 1],
-            positions[i * 4 + 2],
-            positions[i * 4 + 3]);
-        if (i > 2 * workgroupSize) {
-            break;
-        }
+    for (i = 0; i < POINTS / workgroupSize; i++) {
+        // if ((i < 2 * workgroupSize) || (i > POINTS - 2 * workgroupSize)) {
+            ALOGV("positions[%d]=(%f, %f, %f, %f)\n", i * workgroupSize,
+                positions[i * workgroupSize * 4 + 0],
+                positions[i * workgroupSize * 4 + 1],
+                positions[i * workgroupSize * 4 + 2],
+                positions[i * workgroupSize * 4 + 3]);
+            ALOGV("positions[%d]=(%f, %f, %f, %f)\n", i * workgroupSize + 1,
+                positions[(i * workgroupSize + 1) * 4 + 0],
+                positions[(i * workgroupSize + 1) * 4 + 1],
+                positions[(i * workgroupSize + 1) * 4 + 2],
+                positions[(i * workgroupSize + 1) * 4 + 3]);
     }
     glUnmapBuffer(GL_TEXTURE_BUFFER_EXT);
     assertNoGLErrors("unmap positions buffer");
