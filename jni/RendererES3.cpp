@@ -131,7 +131,7 @@ void tryComputeShader() {
     GLuint compute_prog = glCreateProgram();
     assertNoGLErrors("create program");
 
-    const int workgroupSize = 128;
+    const int workgroupSize = 1024; // max supported by Nexus 6
 
     static const char compute_shader_header[] =
 R"(#version 310 es
@@ -146,7 +146,7 @@ layout(binding=1, rgba32f) uniform mediump writeonly imageBuffer position_buffer
 void main()
 {
     vec4 vel = imageLoad(velocity_buffer, int(gl_GlobalInvocationID.x));
-    vel += vec4(100.0f, 50.0f, 25.0f, 12.5f);
+    vel = vec4(gl_LocalInvocationID.x, gl_WorkGroupID.x, 25.0f, 12.5f);
     imageStore(position_buffer, int(gl_GlobalInvocationID.x), vel);
 }
 )";
@@ -185,8 +185,8 @@ void main()
     assertNoGLErrors("link shader");
 
     ALOGV("Program linked");
-    const int POINTS = 512*1024-1;
-    const size_t sizeInBytes = POINTS * 4 * sizeof(float);
+    const int POINTS = 8*1024*1024-1; // N6: max allowed with max workgroupSize
+    const size_t sizeInBytes = POINTS * 4 * sizeof(float); // N6: 134,217,712 out of 134,217,728 max texture size
     GLuint buffers[2];
     glGenBuffers(2, buffers);
     GLuint position_buffer = buffers[0];
@@ -266,7 +266,7 @@ void main()
             positions[i * 4 + 1],
             positions[i * 4 + 2],
             positions[i * 4 + 3]);
-        if (i > 10) {
+        if (i > 2 * workgroupSize) {
             break;
         }
     }
