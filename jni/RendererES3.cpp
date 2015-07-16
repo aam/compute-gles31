@@ -89,30 +89,29 @@ RendererES3::RendererES3()
         mVB[i] = 0;
 }
 
+#define stats(v) { \
+    GLint64 i64; \
+    glGetInteger64v(v, &i64); \
+    long long int lli = (long long int)i64; \
+    ALOGV(#v ": %lld", lli); \
+}
+
+#define stats32_3(v) { \
+    GLint i1, i2, i3; \
+    glGetIntegeri_v(v, 0, &i1); \
+    glGetIntegeri_v(v, 1, &i2); \
+    glGetIntegeri_v(v, 2, &i3); \
+    ALOGV(#v ": (%d, %d, %d)", i1, i2, i3); \
+}
+
 void printOpenGLStats() {
-    GLint64 max_texture_size;
-    glGetInteger64v(GL_MAX_TEXTURE_BUFFER_SIZE_EXT, &max_texture_size);
-    long long int ll_max_texture_size = (long long int)max_texture_size;
-    ALOGV("Retrieved max texture size: %lld", ll_max_texture_size);
-
-    GLint64 max_compute_shared_memory;
-    //#define MAX_COMPUTE_SHARED_MEMORY_SIZE 0x8262
-    glGetInteger64v(GL_MAX_COMPUTE_SHARED_MEMORY_SIZE, &max_compute_shared_memory);
-    long long int ll_max_compute_shared_memory = (long long int)max_compute_shared_memory;
-    ALOGV("Retrieved max compute shared memory size: %lld", ll_max_compute_shared_memory);
-
-
-    GLint64 max_shader_storage_block_size;
-    //#define GL_MAX_SHADER_STORAGE_BLOCK_SIZE  0x90DE
-    glGetInteger64v(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &max_shader_storage_block_size);
-    long long int ll_max_shader_storage_block_size = (long long int)max_shader_storage_block_size;
-    ALOGV("Retrieved max_shader_storage_block_size: %lld", ll_max_shader_storage_block_size);
-
-    GLint64 max_compute_shader_storage_blocks;
-    //#define GL_MAX_SHADER_STORAGE_BLOCK_SIZE  0x90DE
-    glGetInteger64v(GL_MAX_COMPUTE_SHADER_STORAGE_BLOCKS, &max_compute_shader_storage_blocks);
-    long long int ll_max_compute_shader_storage_blocks = (long long int)max_compute_shader_storage_blocks;
-    ALOGV("Retrieved max_compute_shader_storage_blocks: %lld", ll_max_compute_shader_storage_blocks);
+    stats(GL_MAX_TEXTURE_BUFFER_SIZE_EXT);
+    stats(GL_MAX_COMPUTE_SHARED_MEMORY_SIZE);
+    stats(GL_MAX_SHADER_STORAGE_BLOCK_SIZE);
+    stats(GL_MAX_COMPUTE_SHADER_STORAGE_BLOCKS);
+    stats(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS);
+    stats32_3(GL_MAX_COMPUTE_WORK_GROUP_COUNT);
+    stats32_3(GL_MAX_COMPUTE_WORK_GROUP_SIZE);
 }
 
 void assertNoGLErrors(const char *step) {
@@ -147,7 +146,7 @@ void main()
 {
     vec4 vel = imageLoad(velocity_buffer, int(gl_GlobalInvocationID.x));
     vel += vec4(0.0f, 0.0f, 25.0f, 12.5f);
-    vec4 result = vec4(gl_LocalInvocationID.x, gl_WorkGroupID.x, vel.z, vel.w);
+    vec4 result = vec4(gl_LocalInvocationID.x, gl_WorkGroupID.x, gl_LocalInvocationID.y, gl_WorkGroupID.y);
     imageStore(position_buffer, int(gl_GlobalInvocationID.x), result);
 }
 )";
@@ -249,7 +248,7 @@ void main()
     glBindImageTexture(1, position_tbo, 0, false, 0, GL_WRITE_ONLY, GL_RGBA32F);
     assertNoGLErrors("bind image texture for position tbo");
 
-    glDispatchCompute(POINTS / workgroupSize, 1, 1);
+    glDispatchCompute(2 * POINTS / workgroupSize, 1, 1);
     assertNoGLErrors("dispatch compute");
 
     glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
